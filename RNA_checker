@@ -1,0 +1,142 @@
+#RNA data checker
+# Updated main directory
+dir_main = "/kaggle/input/stanford-rna-3d-folding/"
+
+def load_data():
+    """
+    Loads the main CSV files from the Stanford RNA 3D Folding competition.
+    Returns a dictionary with DataFrames.
+    """
+    main_files = [
+        "train_sequences.csv", 
+        "train_labels.csv", 
+        "validation_sequences.csv", 
+        "validation_labels.csv", 
+        "test_sequences.csv",
+        "sample_submission.csv"
+    ]
+    
+    data = {}
+    for file_name in main_files:
+        file_path = os.path.join(dir_main, file_name)
+        if os.path.exists(file_path):
+            try:
+                data[file_name] = pd.read_csv(file_path)
+                print(f"File {file_name} loaded successfully. Shape: {data[file_name].shape}")
+            except Exception as e:
+                print(f"Error loading {file_name}: {e}")
+        else:
+            print(f"File {file_name} not found.")
+            data[file_name] = None
+    
+    return data
+
+def compare_columns(main_data):
+    """
+    Compares columns between different DataFrames.
+    """
+    # List all available keys
+    print("\nLoaded files:")
+    print(list(main_data.keys()))
+    
+    # Compare columns between train_sequences.csv and test_sequences.csv
+    if "train_sequences.csv" in main_data and "test_sequences.csv" in main_data:
+        train_cols = set(main_data["train_sequences.csv"].columns)
+        test_cols = set(main_data["test_sequences.csv"].columns)
+        
+        print("\nColumns in train_sequences.csv:")
+        print(list(main_data["train_sequences.csv"].columns))
+        
+        print("\nUnique columns in train_sequences.csv (not present in test_sequences.csv):")
+        print(train_cols - test_cols)
+        
+        print("\nUnique columns in test_sequences.csv (not present in train_sequences.csv):")
+        print(test_cols - train_cols)
+    
+    # Compare columns between train_labels.csv and validation_labels.csv
+    if "train_labels.csv" in main_data and "validation_labels.csv" in main_data:
+        train_label_cols = set(main_data["train_labels.csv"].columns)
+        val_label_cols = set(main_data["validation_labels.csv"].columns)
+        
+        print("\nColumns in train_labels.csv:")
+        print(list(main_data["train_labels.csv"].columns))
+        
+        print("\nColumns in validation_labels.csv:")
+        print(list(main_data["validation_labels.csv"].columns))
+        
+        print("\nUnique columns in validation_labels.csv (not present in train_labels.csv):")
+        print(val_label_cols - train_label_cols)
+    
+    # Compare columns between validation_labels.csv and sample_submission.csv
+    if "validation_labels.csv" in main_data and "sample_submission.csv" in main_data:
+        val_label_cols = set(main_data["validation_labels.csv"].columns)
+        sample_cols = set(main_data["sample_submission.csv"].columns)
+        
+        print("\nColumns in sample_submission.csv:")
+        print(list(main_data["sample_submission.csv"].columns))
+        
+        print("\nUnique columns in validation_labels.csv (not present in sample_submission.csv):")
+        print(val_label_cols - sample_cols)
+        
+        print("\nUnique columns in sample_submission.csv (not present in validation_labels.csv):")
+        print(sample_cols - val_label_cols)
+
+def analyze_structure_format(main_data):
+    """
+    Analyzes the format of 3D structures (coordinates).
+    """
+    if "validation_labels.csv" in main_data and main_data["validation_labels.csv"] is not None:
+        df = main_data["validation_labels.csv"]
+        
+        # Find all coordinate columns (x_1, y_1, z_1, etc.)
+        coord_cols = [col for col in df.columns if col.startswith(('x_', 'y_', 'z_'))]
+        
+        # Group by structure
+        structures = {}
+        for col in coord_cols:
+            # Extract structure number (e.g., "x_1" -> 1)
+            parts = col.split('_')
+            if len(parts) == 2:
+                struct_num = int(parts[1])
+                coord_type = parts[0]
+                
+                if struct_num not in structures:
+                    structures[struct_num] = []
+                
+                structures[struct_num].append(col)
+        
+        print("\nStructure of the labels file:")
+        print(f"Total structures found: {len(structures)}")
+        
+        # Show details of the first structure
+        if structures:
+            first_struct = min(structures.keys())
+            print(f"\nDetails of structure {first_struct}:")
+            print(f"Columns: {sorted(structures[first_struct])}")
+            
+            # Check for missing values
+            for col in structures[first_struct]:
+                missing = df[col].isna().sum()
+                total = len(df)
+                print(f"{col}: {missing} missing values ({missing/total*100:.2f}%)")
+            
+            # Check the range of non-missing values for the first structure
+            for col in structures[first_struct]:
+                non_null = df[col][df[col] != -1.0e+18]  # Values that are not -1.0e+18
+                if not non_null.empty:
+                    print(f"{col} - Range: [{non_null.min():.3f}, {non_null.max():.3f}]")
+
+def main():
+    # Load the data
+    main_data = load_data()
+    
+    # Compare columns between different files
+    compare_columns(main_data)
+    
+    # Analyze the format of 3D structures
+    analyze_structure_format(main_data)
+    
+    return main_data
+
+if __name__ == '__main__':
+    main_data = main()
