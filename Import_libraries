@@ -1,0 +1,45 @@
+# Basic Library 
+import os
+import time
+import gc
+import traceback
+from collections import Counter
+import warnings
+import hashlib
+
+# Data Manipulation 
+import numpy as np
+import pandas as pd
+
+# Visualisation 
+import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
+
+# ML library
+try:
+   # TensorFlow and Keras
+   import tensorflow as tf
+   from tensorflow.keras import layers, models, optimizers
+   from tensorflow.keras.models import Model
+   from tensorflow.keras.layers import (
+       Input, Conv1D, Dense, Dropout, BatchNormalization, 
+       Flatten, Reshape, Bidirectional, LSTM
+   )
+   from tensorflow.keras.callbacks import EarlyStopping
+   
+   # Scikit-learn
+   from sklearn.model_selection import train_test_split
+   
+   # XGBoost
+   import xgboost as xgb
+   
+   ML_AVAILABLE = True
+except ImportError:
+   print("Warning: ML libraries not available. Will use only reference-based methods.")
+   ML_AVAILABLE = False
+
+# Set random seed for reproducibility
+np.random.seed(0)
+
+# Suppress warnings
+warnings.filterwarnings('ignore')
